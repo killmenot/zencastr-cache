@@ -15,7 +15,7 @@ export class CacheService {
     @Inject('OPTIONS')
     private readonly options: { ttl?: number }
   ) {
-    this.defaultTtl = options?.ttl || 10 * 1000
+    this.defaultTtl = options?.ttl || 60 * 1000
 
     this.intervalId = setInterval(() => {
       this.check()
