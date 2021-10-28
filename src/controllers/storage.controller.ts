@@ -1,5 +1,6 @@
-import { Controller, Query, Get, Put, Param, Body, Delete } from '@nestjs/common'
-import { CacheService} from '../services'
+import { Controller, Query, Get, Put, Param, Body, Delete, Headers } from '@nestjs/common'
+import { CacheService } from '../services'
+import { Ttl } from '../decorators'
 
 @Controller('storage')
 export class StorageController {
@@ -8,6 +9,11 @@ export class StorageController {
   @Get('list')
   async keys(): Promise<string[]> {
     return this.cacheService.keys()
+  }
+
+  @Get('keys/:id/ttl')
+  async getTtl(@Param() params): Promise<any> {
+    return await this.cacheService.getTtl(params?.id) || null
   }
 
   @Get('keys/:id')
@@ -20,10 +26,15 @@ export class StorageController {
     return await this.cacheService.mget(keys || [])
   }
 
-  @Put('keys/:id')
-  async set(@Param() params, @Body() data: any): Promise<any> {
-    await this.cacheService.set(params?.id, data)
+  @Put('keys/:id/ttl')
+  async updateTtl(@Param() params, @Ttl() ttl: number): Promise<any> {
+    await this.cacheService.updateTtl(params?.id, ttl)
+    return await this.cacheService.getTtl(params?.id) || null
+  }
 
+  @Put('keys/:id')
+  async set(@Param() params, @Body() data: any, @Ttl() ttl?: number): Promise<any> {
+    await this.cacheService.set(params?.id, data, ttl)
     return this.cacheService.get(params?.id)
   }
 
@@ -31,7 +42,6 @@ export class StorageController {
   async mset(@Body() data: [{ key: string, value: any, ttl?: number}]): Promise<any> {
     const keys = (data || []).map(x => x.key)
     await this.cacheService.mset(data)
-
     return this.cacheService.mget(keys)
   }
 
@@ -48,7 +58,6 @@ export class StorageController {
   @Delete('flush')
   async flush(): Promise<boolean> {
     await this.cacheService.flush()
-
     return true
   }
 }
